@@ -123,7 +123,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                   <LogIn className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-xl font-extrabold text-slate-900">Нэвтрэх / Бүртгүүлэх</h3>
-                <p className="text-xs text-slate-400 mt-1">ЦЭНХЭР ТЕХ дэлгүүрт тавтай морил</p>
+                <p className="text-xs text-slate-400 mt-1">MY TECH дэлгүүрт тавтай морил</p>
               </div>
 
               {/* ── Google товч ── */}

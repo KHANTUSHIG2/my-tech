@@ -106,7 +106,7 @@ export default function AdminDashboard({ onExit }: AdminDashboardProps) {
           </div>
           <div>
             <p className="text-sm font-extrabold text-slate-900 tracking-wide">
-              ЦЭНХЭР ТЕХ
+              MY TECH
             </p>
             <p className="text-[10px] text-slate-400 uppercase tracking-widest">
               Admin Panel

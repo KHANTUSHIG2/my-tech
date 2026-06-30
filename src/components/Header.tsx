@@ -122,18 +122,9 @@ export default function Header({
           }}
           className="flex items-center gap-2.5 cursor-pointer select-none group"
         >
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-all duration-300">
-            <svg
-              className="w-5 h-5 text-white fill-current"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-          </div>
           <div>
             <span className="text-lg md:text-xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 font-display">
-              ЦЭНХЭР ТЕХ
+              MY TECH
             </span>
             <span className="block text-[9px] text-blue-500 font-bold tracking-[0.2em] uppercase">
               COMPUTER & PARTS STORE

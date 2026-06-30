@@ -347,14 +347,14 @@ export default function App() {
               ★
             </div>
             <div>
-              <span className="text-base font-extrabold tracking-wider font-display">ЦЭНХЭР ТЕХ</span>
+              <span className="text-base font-extrabold tracking-wider font-display">MY TECH</span>
               <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">MINIMALIST TECH STORE MONGOLIA</p>
             </div>
           </div>
           
           <div className="text-center md:text-right">
             <p className="text-xs text-slate-400 font-sans">
-              &copy; {new Date().getFullYear()} Цэнхэр Тех Дэлгүүр. Бүх эрх хуулиар хамгаалагдсан.
+              &copy; {new Date().getFullYear()} My Tech. Бүх эрх хуулиар хамгаалагдсан.
             </p>
             <p className="text-[10px] text-slate-600 mt-1">
               Минималист загвар, дээд зэргийн анимэйшн туршлага.

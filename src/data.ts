@@ -75,8 +75,6 @@ export const matchesCategory = (productCategory: string, selected: string): bool
   return leafIds === null || leafIds.includes(productCategory);
 };
 
-const img = (keyword: string, lock: number) =>
-  `https://loremflickr.com/800/800/${keyword}?lock=${lock}`;
 
 export const PRODUCTS: Product[] = [
   /* ───────────────────────── БЭЛЭН КОМПЬЮТЕР ───────────────────────── */
@@ -89,7 +87,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Ryzen 7 болон RTX 4070 Super видео картаар тоноглогдсон, 2K нягтралд тогтвортой өндөр FPS өгөх тоглоомын бэлэн компьютер. Угсралт, тест бүрэн хийгдсэн.",
     category: "prebuilt",
-    image: img("gaming,pc,computer", 11),
+    image: "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&q=80&w=800",
     rating: 4.9,
     stock: 6,
     colors: ["Хар", "Цагаан"],
@@ -117,7 +115,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Оффис, сурах, өдөр тутмын хэрэглээнд төгс тохирох чимээгүй, найдвартай бэлэн компьютер. Олон цонх, видео уулзалтыг хялбар даана.",
     category: "prebuilt",
-    image: img("office,computer,desktop", 12),
+    image: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,
     stock: 14,
     colors: ["Хар"],
@@ -147,7 +145,7 @@ export const PRODUCTS: Product[] = [
     description:
       "3D V-Cache технологитой, тоглоомд дэлхийд тэргүүлэгч гүйцэтгэлтэй 8 цөмт процессор. Бага илчтэй, өндөр хүчин чадал.",
     category: "cpu",
-    image: img("cpu,processor", 21),
+    image: "https://images.unsplash.com/photo-1555680202-c86f0e12f086?auto=format&fit=crop&q=80&w=800",
     rating: 5.0,
     stock: 10,
     features: [
@@ -173,7 +171,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Тоглоом болон бүтээмжийн ажилд гайхалтай тэнцвэр өгөх 14 цөмт процессор. Хурдтай, олон зориулалттай.",
     category: "cpu",
-    image: img("intel,cpu", 22),
+    image: "https://images.unsplash.com/photo-1597838816882-4435b1977fbe?auto=format&fit=crop&q=80&w=800",
     rating: 4.8,
     stock: 16,
     features: [
@@ -202,7 +200,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Ryzen 7000 серийн процессоруудад зориулсан бат бөх VRM, WiFi 6E болон PCIe 4.0 дэмжлэгтэй ATX эх хавтан.",
     category: "motherboard",
-    image: img("motherboard", 31),
+    image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,
     stock: 9,
     features: [
@@ -230,7 +228,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Тоглоом болон бүтээмжийн ажилд зориулсан 6000MHz хурдтай, RGB гэрэлтүүлэгтэй 2x16GB DDR5 санах ойн иж бүрдэл.",
     category: "ram",
-    image: img("ram,memory", 41),
+    image: "https://images.unsplash.com/photo-1562976540-1502c2145186?auto=format&fit=crop&q=80&w=800",
     rating: 4.8,
     stock: 20,
     features: [
@@ -259,7 +257,7 @@ export const PRODUCTS: Product[] = [
     description:
       "PCIe 4.0-ийн хязгаарыг шавхсан, 7450MB/s унших хурдтай дээд зэрэглэлийн NVMe SSD. Систем болон тоглоомд хурдыг мэдрэгдтэл нэмнэ.",
     category: "ssd",
-    image: img("ssd,storage", 51),
+    image: "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&q=80&w=800",
     rating: 4.9,
     stock: 25,
     features: [
@@ -287,7 +285,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Их хэмжээний өгөгдөл, тоглоомын сан хадгалахад тохиромжтой, найдвартай 7200RPM-ийн хатуу диск.",
     category: "hdd",
-    image: img("harddrive,storage", 61),
+    image: "https://images.unsplash.com/photo-1544785349-c4a5301826fd?auto=format&fit=crop&q=80&w=800",
     rating: 4.5,
     stock: 18,
     features: [
@@ -316,7 +314,7 @@ export const PRODUCTS: Product[] = [
     description:
       "1440p тоглоомд төгс, DLSS 3 болон Ray Tracing бүрэн дэмждэг хүчирхэг видео карт. Бүтээмжийн ажилд ч маш сайн.",
     category: "gpu",
-    image: img("graphics,card,gpu", 71),
+    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&q=80&w=800",
     rating: 4.9,
     stock: 7,
     colors: ["Хар"],
@@ -343,7 +341,7 @@ export const PRODUCTS: Product[] = [
     description:
       "16GB их санах ойтой, 1440p тоглоомд гайхалтай үнэ-чанарын харьцаа өгөх видео карт. Ирээдүйн тоглоомд бэлэн.",
     category: "gpu",
-    image: img("amd,graphics,card", 72),
+    image: "https://images.unsplash.com/photo-1592669241067-9a3b6a3af52b?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,
     stock: 8,
     colors: ["Хар", "Улаан"],
@@ -372,7 +370,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Бүрэн модульчлагдсан кабельтай, 80+ Gold гэрчилгээтэй, чимээгүй ажиллагаатай найдвартай тэжээл. Хүчирхэг угсралтад тохиромжтой.",
     category: "psu",
-    image: img("power,supply,pc", 81),
+    image: "https://images.unsplash.com/photo-1624705013726-8afead36c9d8?auto=format&fit=crop&q=80&w=800",
     rating: 4.8,
     stock: 13,
     features: [
@@ -401,7 +399,7 @@ export const PRODUCTS: Product[] = [
     description:
       "280мм радиатортой шингэн хөргөлтийн систем. Процессорыг хүйтэн, чимээгүй байлгаж, RGB толгойгоор угсралтыг чимнэ.",
     category: "cooler",
-    image: img("pc,cooler,liquid", 91),
+    image: "https://images.unsplash.com/photo-1603732551658-5fabbefa84eb?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,
     stock: 11,
     features: [
@@ -429,7 +427,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Хоёр талын шилэн хана, маш сайн агааржуулалттай, угсралтын уян хатан байдал өндөртэй дээд зэрэглэлийн кэйс.",
     category: "case",
-    image: img("pc,case,computer", 101),
+    image: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?auto=format&fit=crop&q=80&w=800",
     rating: 4.9,
     stock: 9,
     colors: ["Хар", "Цагаан"],
@@ -459,7 +457,7 @@ export const PRODUCTS: Product[] = [
     description:
       "LIGHTSPEED утасгүй холболт, HERO 25K мэдрэгч болон RGB-тэй домогт тоглоомын хулгана. 13 програмчлагдах товчтой.",
     category: "mouse",
-    image: img("gaming,mouse", 111),
+    image: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&q=80&w=800",
     rating: 4.8,
     stock: 22,
     colors: ["Хар", "Цагаан"],
@@ -606,7 +604,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Стрим, подкаст болон видео уулзалтад зориулсан RGB-тэй USB конденсатор микрофон. Дуу тусгаарлах суурьтай, чанартай дуу бичлэг.",
     category: "microphone",
-    image: img("microphone,studio", 121),
+    image: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,
     stock: 16,
     colors: ["Хар"],
@@ -749,7 +747,7 @@ export const PRODUCTS: Product[] = [
     description:
       "4K Ultra HD нягтрал, HDR болон автомат гэрэл тохируулгатай мэргэжлийн вэб камер. Видео уулзалт, стримд төгс.",
     category: "camera",
-    image: img("webcam,camera", 131),
+    image: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?auto=format&fit=crop&q=80&w=800",
     rating: 4.6,
     stock: 12,
     colors: ["Хар"],
@@ -778,7 +776,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Бүх ширээг бүрхэх том хэмжээтэй, нягт нэхмэл гадаргуутай тоглоомын хулганы дэвсгэр. Хулганы хөдөлгөөнийг нарийвчлалтай дамжуулна.",
     category: "mousepad",
-    image: img("mousepad,desk,setup", 141),
+    image: "https://images.unsplash.com/photo-1616499370260-485b3e5ed653?auto=format&fit=crop&q=80&w=800",
     rating: 4.8,
     stock: 30,
     colors: ["Хар"],

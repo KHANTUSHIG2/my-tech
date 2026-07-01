@@ -18,12 +18,8 @@ const KEYS = {
   heroSlides: "techstore_hero_slides",
 };
 
-/**
- * Админ самбарт нэвтрэх нууц түлхүүр.
- * (#admin хаяг руу орсон ч энэ түлхүүрийг зөв бичсэн үед л нээгдэнэ.)
- * Production-д орчны хувьсагч/серверээр солих хэрэгтэй.
- */
-export const ADMIN_KEY = "tech-admin-2026";
+// Admin key is loaded from env — never hardcode in source
+export const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY as string;
 
 function read<T>(key: string, fallback: T): T {
   try {

@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Tech — Компьютерийн дэлгүүр</title>
     <!-- Google Identity Services (үнэгүй Google Sign-In popup) -->
+    <!-- No SRI here: accounts.google.com/gsi/client omits Access-Control-Allow-Origin,
+         so a crossorigin+integrity fetch is rejected outright (verified: net::ERR_FAILED).
+         Trust boundary is CSP script-src (locked to https://accounts.google.com) instead. -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>

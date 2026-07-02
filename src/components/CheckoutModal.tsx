@@ -4,6 +4,7 @@ import { X, CheckCircle2, ChevronRight, ShoppingBag, CreditCard, Landmark, Coins
 import { CartItem } from "../types";
 import { addOrder } from "../store";
 import { supabase } from "../lib/supabase";
+import { checkoutSchema, CheckoutErrors } from "../lib/validations/checkout";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -22,10 +23,11 @@ export default function CheckoutModal({
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
-    district: "Bayanzurkh",
+    district: "Bayanzurkh" as const,
     address: "",
-    payment: "qpay",
+    payment: "qpay" as const,
   });
+  const [fieldErrors, setFieldErrors] = useState<CheckoutErrors>({});
 
   const subtotal = cartItems.reduce(
     (acc, item) => acc + item.product.price * item.quantity,
@@ -34,37 +36,44 @@ export default function CheckoutModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.phone || !formData.address) {
-      alert("Бүх талбарыг бөглөнө үү!");
+    setFieldErrors({});
+
+    const result = checkoutSchema.safeParse(formData);
+    if (!result.success) {
+      const errs: CheckoutErrors = {};
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof CheckoutErrors;
+        if (!errs[field]) errs[field] = issue.message;
+      }
+      setFieldErrors(errs);
       return;
     }
+
     const orderItems = cartItems.map((item) => ({
       id: item.product.id,
       name: item.product.name,
       price: item.product.price,
       quantity: item.quantity,
     }));
-    // Save to localStorage
     const order = addOrder({
       customer: {
-        fullName: formData.fullName,
-        phone: formData.phone,
-        district: formData.district,
-        address: formData.address,
+        fullName: result.data.fullName,
+        phone: result.data.phone,
+        district: result.data.district,
+        address: result.data.address,
       },
-      payment: formData.payment,
+      payment: result.data.payment,
       items: orderItems,
       total: subtotal,
     });
-    // Also save to Supabase (silently ignore if schema not set up yet)
     const { data: { user } } = await supabase.auth.getUser();
     supabase.from("orders").insert({
       id: order.id,
-      customer_full_name: formData.fullName,
-      customer_phone: formData.phone,
-      customer_district: formData.district,
-      customer_address: formData.address,
-      payment: formData.payment,
+      customer_full_name: result.data.fullName,
+      customer_phone: result.data.phone,
+      customer_district: result.data.district,
+      customer_address: result.data.address,
+      payment: result.data.payment,
       items: orderItems,
       total: subtotal,
       status: "new",
@@ -92,7 +101,6 @@ export default function CheckoutModal({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
-          {/* Backdrop overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -101,7 +109,6 @@ export default function CheckoutModal({
             className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm"
           />
 
-          {/* Modal Content */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -110,7 +117,6 @@ export default function CheckoutModal({
             className="relative bg-white text-slate-900 rounded-[32px] w-full max-w-2xl overflow-hidden shadow-2xl z-10 border border-slate-100 flex flex-col"
             id="checkout-modal-container"
           >
-            {/* Close Button (only on form step) */}
             {step === "form" && (
               <button
                 id="close-checkout-btn"
@@ -122,8 +128,7 @@ export default function CheckoutModal({
             )}
 
             {step === "form" ? (
-              <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                {/* Header */}
+              <form onSubmit={handleSubmit} className="flex flex-col h-full" noValidate>
                 <div className="p-6 md:p-8 bg-white border-b border-slate-100 flex items-center gap-3">
                   <div className="h-10 w-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-md">
                     <CreditCard className="w-5 h-5" />
@@ -134,9 +139,7 @@ export default function CheckoutModal({
                   </div>
                 </div>
 
-                {/* Form Elements */}
                 <div className="p-6 md:p-8 space-y-6 max-h-[60vh] overflow-y-auto">
-                  {/* Order Summary banner */}
                   <div className="p-4 bg-blue-50/50 border border-blue-100/50 rounded-2xl flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <ShoppingBag className="w-4 h-4 text-blue-600" />
@@ -158,12 +161,19 @@ export default function CheckoutModal({
                       <input
                         id="checkout-name"
                         type="text"
-                        required
                         value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm focus:outline-none font-medium transition-colors duration-200"
+                        onChange={(e) => {
+                          setFormData({ ...formData, fullName: e.target.value });
+                          if (fieldErrors.fullName) setFieldErrors((p) => ({ ...p, fullName: undefined }));
+                        }}
+                        className={`w-full px-4 py-3 bg-white border rounded-xl text-sm focus:outline-none font-medium transition-colors duration-200 ${
+                          fieldErrors.fullName ? "border-rose-400 focus:border-rose-400" : "border-slate-200 focus:border-blue-500"
+                        }`}
                         placeholder="Бат-Эрдэнэ"
                       />
+                      {fieldErrors.fullName && (
+                        <p className="text-[11px] text-rose-500 font-medium">{fieldErrors.fullName}</p>
+                      )}
                     </div>
 
                     {/* Phone Number */}
@@ -174,14 +184,24 @@ export default function CheckoutModal({
                       <input
                         id="checkout-phone"
                         type="tel"
-                        required
-                        pattern="[0-9]{8}"
+                        inputMode="numeric"
+                        maxLength={8}
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm focus:outline-none font-semibold transition-colors duration-200 font-mono"
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/\D/g, "");
+                          setFormData({ ...formData, phone: v });
+                          if (fieldErrors.phone) setFieldErrors((p) => ({ ...p, phone: undefined }));
+                        }}
+                        className={`w-full px-4 py-3 bg-white border rounded-xl text-sm focus:outline-none font-semibold transition-colors duration-200 font-mono ${
+                          fieldErrors.phone ? "border-rose-400 focus:border-rose-400" : "border-slate-200 focus:border-blue-500"
+                        }`}
                         placeholder="99112233"
                       />
-                      <span className="text-[10px] text-slate-400">8 оронтой тоо оруулна уу</span>
+                      {fieldErrors.phone ? (
+                        <p className="text-[11px] text-rose-500 font-medium">{fieldErrors.phone}</p>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">8 оронтой тоо оруулна уу</span>
+                      )}
                     </div>
                   </div>
 
@@ -194,7 +214,9 @@ export default function CheckoutModal({
                       <select
                         id="checkout-district"
                         value={formData.district}
-                        onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, district: e.target.value as typeof formData.district })
+                        }
                         className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm focus:outline-none font-medium transition-colors duration-200"
                       >
                         <option value="Bayanzurkh">Баянзүрх дүүрэг</option>
@@ -214,12 +236,19 @@ export default function CheckoutModal({
                       <input
                         id="checkout-address"
                         type="text"
-                        required
                         value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm focus:outline-none font-medium transition-colors duration-200"
+                        onChange={(e) => {
+                          setFormData({ ...formData, address: e.target.value });
+                          if (fieldErrors.address) setFieldErrors((p) => ({ ...p, address: undefined }));
+                        }}
+                        className={`w-full px-4 py-3 bg-white border rounded-xl text-sm focus:outline-none font-medium transition-colors duration-200 ${
+                          fieldErrors.address ? "border-rose-400 focus:border-rose-400" : "border-slate-200 focus:border-blue-500"
+                        }`}
                         placeholder="13-р хороолол, 25-р байр, 44 тоот"
                       />
+                      {fieldErrors.address && (
+                        <p className="text-[11px] text-rose-500 font-medium">{fieldErrors.address}</p>
+                      )}
                     </div>
                   </div>
 
@@ -229,7 +258,6 @@ export default function CheckoutModal({
                       Төлбөрийн хэрэгсэл *
                     </label>
                     <div className="grid grid-cols-3 gap-3">
-                      {/* QPay */}
                       <button
                         type="button"
                         id="pay-qpay"
@@ -243,8 +271,6 @@ export default function CheckoutModal({
                         <Coins className="w-5 h-5 mb-1" />
                         <span className="text-xs">QPay</span>
                       </button>
-
-                      {/* Bank Transfer */}
                       <button
                         type="button"
                         id="pay-bank"
@@ -258,8 +284,6 @@ export default function CheckoutModal({
                         <Landmark className="w-5 h-5 mb-1" />
                         <span className="text-xs">Дансаар</span>
                       </button>
-
-                      {/* Cash on delivery */}
                       <button
                         type="button"
                         id="pay-cash"
@@ -277,12 +301,10 @@ export default function CheckoutModal({
                   </div>
                 </div>
 
-                {/* Footer buttons */}
                 <div className="p-6 md:p-8 border-t border-slate-100 bg-white flex items-center justify-between gap-4">
                   <span className="text-xs text-slate-400 leading-relaxed font-sans max-w-[280px]">
                     "Илгээх" дарснаар таны захиалга манай арын системд бүртгэгдэнэ.
                   </span>
-
                   <button
                     type="submit"
                     id="submit-order-btn"
@@ -294,7 +316,6 @@ export default function CheckoutModal({
                 </div>
               </form>
             ) : (
-              // Success Screen View
               <div className="p-8 md:p-12 text-center flex flex-col items-center">
                 <motion.div
                   initial={{ scale: 0.5, opacity: 0 }}
@@ -308,13 +329,11 @@ export default function CheckoutModal({
                 <h3 className="text-2xl font-extrabold text-slate-950 font-display">
                   Захиалга амжилттай бүртгэгдлээ!
                 </h3>
-                
                 <p className="text-sm text-slate-500 max-w-[450px] mt-3 leading-relaxed">
                   Баярлалаа, <strong className="text-slate-800">{formData.fullName}</strong>. Таны{" "}
                   <strong className="text-blue-600">{subtotal.toLocaleString()} ₮</strong> дүн бүхий захиалга амжилттай баталгаажлаа.
                 </p>
 
-                {/* Delivery details breakdown */}
                 <div className="w-full max-w-sm mt-6 p-4 bg-white border border-slate-200 rounded-2xl text-left text-xs md:text-sm space-y-2 font-sans">
                   <div className="flex justify-between border-b border-slate-200/50 pb-2">
                     <span className="text-slate-400 font-medium">Утасны дугаар:</span>

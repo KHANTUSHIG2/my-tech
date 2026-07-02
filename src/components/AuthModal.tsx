@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Phone, Lock, User as UserIcon, LogIn } from "lucide-react";
+import { X, Phone, Lock, User as UserIcon, LogIn, ShieldAlert } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { phoneLoginSchema, phoneRegisterSchema } from "../lib/validations/auth";
+import { authLimiter } from "../lib/security/rateLimiter";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -13,14 +15,23 @@ type PhoneMode = "login" | "register";
 
 export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [phoneMode, setPhoneMode] = useState<PhoneMode>("login");
-
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [remaining, setRemaining] = useState(0);
+
+  // Countdown ticker for auth lockout
+  useEffect(() => {
+    const tick = () => setRemaining(authLimiter.remainingMs());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const isLocked = remaining > 0;
 
   const reset = () => {
     setName(""); setPhone(""); setPassword("");
@@ -40,26 +51,42 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       setGoogleLoading(false);
       setError("Google нэвтрэлт амжилтгүй: " + err.message);
     }
-    // Redirect болоход хуудас шинэчлэгдэнэ → App.tsx onAuthStateChange барина
   };
 
   /* ── Утас + Нууц үг: Нэвтрэх ── */
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (isLocked) return;
+
     const digits = phone.trim().replace(/\D/g, "");
-    if (digits.length !== 8) { setError("8 оронтой утасны дугаар оруулна уу."); return; }
-    if (password.length < 6) { setError("Нууц үг хамгийн багадаа 6 тэмдэгт байна."); return; }
+    const parsed = phoneLoginSchema.safeParse({ phone: digits, password });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0].message);
+      return;
+    }
+
     setLoading(true);
     const { error: err } = await supabase.auth.signInWithPassword({
       email: `${digits}@ts.mn`,
       password,
     });
     setLoading(false);
+
     if (err) {
-      setError("Утасны дугаар эсвэл нууц үг буруу байна.");
+      authLimiter.recordFailure();
+      const left = authLimiter.attemptsLeft();
+      if (authLimiter.isLocked()) {
+        setRemaining(authLimiter.remainingMs());
+        setError("Хэт олон удаа оролдлоо. 10 минутын дараа дахин оролдоно уу.");
+      } else {
+        setError(`Утасны дугаар эсвэл нууц үг буруу байна. (${left} оролдлого үлдсэн)`);
+      }
       return;
     }
+
+    authLimiter.recordSuccess();
     onSuccess("Амжилттай нэвтэрлээ.");
     close();
   };
@@ -68,9 +95,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const handlePhoneRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
     const digits = phone.trim().replace(/\D/g, "");
-    if (digits.length !== 8) { setError("8 оронтой утасны дугаар оруулна уу."); return; }
-    if (password.length < 6) { setError("Нууц үг хамгийн багадаа 6 тэмдэгт байна."); return; }
+    const parsed = phoneRegisterSchema.safeParse({ phone: digits, password, name: name.trim() || undefined });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0].message);
+      return;
+    }
+
     setLoading(true);
     const displayName = name.trim() || `+976${digits}`;
     const { data, error: err } = await supabase.auth.signUp({
@@ -79,14 +111,16 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       options: { data: { full_name: displayName, phone: `+976${digits}` } },
     });
     setLoading(false);
+
     if (err) {
       if (err.message.toLowerCase().includes("already registered")) {
         setError("Энэ дугаар аль хэдийн бүртгэлтэй. Нэвтрэх таб руу орно уу.");
       } else {
-        setError(err.message || "Бүртгэл үүсгэхэд алдаа гарлаа.");
+        setError("Бүртгэл үүсгэхэд алдаа гарлаа. Дахин оролдоно уу.");
       }
       return;
     }
+
     if (data.user) {
       await supabase.from("user_profiles").upsert({ id: data.user.id, name: displayName });
       onSuccess("Бүртгэл амжилттай үүслээ!");
@@ -117,37 +151,50 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             </button>
 
             <div className="px-7 pt-8 pb-5">
-              {/* Толгой */}
               <div className="text-center mb-6">
-                <div className="mx-auto h-12 w-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/20 mb-3">
-                  <LogIn className="w-6 h-6 text-white" />
+                <div className={`mx-auto h-12 w-12 rounded-2xl flex items-center justify-center shadow-lg mb-3 ${
+                  isLocked
+                    ? "bg-rose-100 shadow-rose-500/20"
+                    : "bg-gradient-to-tr from-blue-600 to-blue-400 shadow-blue-500/20"
+                }`}>
+                  {isLocked
+                    ? <ShieldAlert className="w-6 h-6 text-rose-600" />
+                    : <LogIn className="w-6 h-6 text-white" />
+                  }
                 </div>
                 <h3 className="text-xl font-extrabold text-slate-900">Нэвтрэх / Бүртгүүлэх</h3>
                 <p className="text-xs text-slate-400 mt-1">MY TECH дэлгүүрт тавтай морил</p>
               </div>
 
-              {/* ── Google товч ── */}
+              {/* Lockout banner */}
+              {isLocked && (
+                <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-2xl text-center">
+                  <p className="text-xs font-bold text-rose-600">Хандалт түр хаагдлаа</p>
+                  <p className="text-2xl font-mono font-bold text-rose-500 mt-1">
+                    {String(Math.floor(remaining / 60000)).padStart(2, "0")}:
+                    {String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0")}
+                  </p>
+                  <p className="text-[10px] text-rose-400 mt-0.5">Үлдсэн хугацаа</p>
+                </div>
+              )}
+
+              {/* Google button */}
               <button
                 onClick={handleGoogle}
-                disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-60 rounded-2xl text-sm font-semibold text-slate-700 transition-all shadow-sm"
+                disabled={googleLoading || isLocked}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50 rounded-2xl text-sm font-semibold text-slate-700 transition-all shadow-sm"
               >
-                {googleLoading ? (
-                  <Spinner className="text-slate-500" />
-                ) : (
-                  <GoogleIcon />
-                )}
+                {googleLoading ? <Spinner className="text-slate-500" /> : <GoogleIcon />}
                 {googleLoading ? "Google руу холбогдож байна..." : "Google-ээр нэвтрэх"}
               </button>
 
-              {/* ── Хуваагч ── */}
               <div className="flex items-center gap-3 my-5">
                 <div className="flex-1 h-px bg-slate-200" />
                 <span className="text-xs text-slate-400 font-medium">эсвэл утасны дугаараар</span>
                 <div className="flex-1 h-px bg-slate-200" />
               </div>
 
-              {/* ── Утас tabs ── */}
+              {/* Phone tabs */}
               <div className="flex bg-slate-100 rounded-xl p-1 gap-1 mb-4">
                 <button
                   onClick={() => { setPhoneMode("login"); setError(""); }}
@@ -172,25 +219,24 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
               </div>
 
               <AnimatePresence mode="wait">
-                {/* ── Нэвтрэх форм ── */}
                 {phoneMode === "login" && (
                   <motion.form key="login" onSubmit={handlePhoneLogin}
                     initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }}
-                    className="space-y-3">
+                    className="space-y-3" noValidate>
                     <Field icon={<Phone className="w-4 h-4" />}>
                       <span className="text-slate-400 text-sm font-mono select-none pr-1">+976</span>
                       <input type="tel" placeholder="99112233" maxLength={8}
                         value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                        className="auth-field font-mono" autoFocus required />
+                        className="auth-field font-mono" autoFocus required disabled={isLocked} />
                     </Field>
                     <Field icon={<Lock className="w-4 h-4" />}>
                       <input type="password" placeholder="Нууц үг"
                         value={password} onChange={(e) => setPassword(e.target.value)}
-                        className="auth-field" required />
+                        className="auth-field" required disabled={isLocked} />
                     </Field>
                     {error && <ErrorMsg>{error}</ErrorMsg>}
-                    <button type="submit" disabled={loading}
+                    <button type="submit" disabled={loading || isLocked}
                       className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
                       {loading && <Spinner />}
                       {loading ? "Нэвтэрч байна..." : "Нэвтрэх"}
@@ -198,12 +244,11 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                   </motion.form>
                 )}
 
-                {/* ── Бүртгүүлэх форм ── */}
                 {phoneMode === "register" && (
                   <motion.form key="register" onSubmit={handlePhoneRegister}
                     initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }}
-                    className="space-y-3">
+                    className="space-y-3" noValidate>
                     <Field icon={<UserIcon className="w-4 h-4" />}>
                       <input type="text" placeholder="Таны нэр (заавал биш)"
                         value={name} onChange={(e) => setName(e.target.value)}
